@@ -1,35 +1,60 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { searchMovies, getPopularMovies } from "../services/api";
 import { MovieCard } from "../components/MovieCard";
 import { Form, Button, Row, Col } from "react-bootstrap";
 
+type Movie = {
+  id: number;
+  title: string;
+  poster_path: string;
+  release_date: string;
+};
+
 export const Home = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredMovies, setFilteredMovies] = useState([]);
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  const movies = [
-    {
-      id: 1,
-      title: "The Dark Knight",
-      imgUrl: "/images/Batman.png",
-      releaseDate: "2008-07-16",
-    },
-    {
-      id: 2,
-      title: "Inception",
-      imgUrl: "/images/Inception.png",
-      releaseDate: "2010-07-16",
-    },
-    {
-      id: 3,
-      title: "Interstellar",
-      imgUrl: "/images/Interstellar.png",
-      releaseDate: "2014-11-07",
-    },
-  ];
+  useEffect(() => {
+    const loadPopularMovies = async () => {
+      try {
+        const popularMovies = await getPopularMovies();
+        setMovies(popularMovies);
+      } catch (error) {
+        console.error(error);
+        setError("Failed to load movies...");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
+    loadPopularMovies();
+  }, []);
+
+  const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    alert(`Searching for: ${searchQuery}`);
+
+    if (!searchQuery.trim()) {
+      setError("Please enter a search query.");
+      return;
+    }
+
+    if (loading) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const searchResults = await searchMovies(searchQuery);
+      setMovies(searchResults);
+      setError(null);
+    } catch (error) {
+      console.error(error);
+      setError("Failed to search for movies...");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -45,26 +70,31 @@ export const Home = () => {
             />
           </Col>
           <Col>
-            <Button type="submit" variant="primary">
+            <Button type="submit" variant="danger">
               Search
             </Button>
           </Col>
         </Row>
       </Form>
 
-      <Row md={2} xs={1} lg={3} className="g-4">
-        {" "}
-        {movies.map((movie) => (
-          <Col key={movie.id}>
-            <MovieCard
-              title={movie.title}
-              imgUrl={movie.imgUrl}
-              favorite={false}
-              releaseDate={movie.releaseDate}
-            />
-          </Col>
-        ))}
-      </Row>
+      {error && <div>{error}</div>}
+
+      {loading ? (
+        <div>Loading...</div>
+      ) : (
+        <Row md={2} xs={1} lg={3} className="g-4">
+          {movies.map((movie) => (
+            <Col key={movie.id}>
+              <MovieCard
+                id={movie.id}
+                title={movie.title}
+                imgUrl={movie.poster_path}
+                releaseDate={movie.release_date}
+              />
+            </Col>
+          ))}
+        </Row>
+      )}
     </div>
   );
 };

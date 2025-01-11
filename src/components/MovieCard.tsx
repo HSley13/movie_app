@@ -1,49 +1,78 @@
 import { Button, Card } from "react-bootstrap";
+import { useMovieContext } from "../context/MovieContext";
 
 type MovieCardProps = {
+  id: number;
   title: string;
-  imgUrl?: string;
-  favorite: boolean;
+  imgUrl: string;
   releaseDate: string;
 };
 
 export const MovieCard = ({
+  id,
   title,
   imgUrl,
-  favorite,
   releaseDate,
 }: MovieCardProps) => {
-  const defaultImgUrl = "/images/imageNotFound.jpg";
+  const { addToFavorites, removeFromFavorites, isFavorite } = useMovieContext();
+  const favorite = isFavorite(id);
 
-  function handleClick() {
-    alert("clicked");
-  }
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+
+    if (favorite) {
+      removeFromFavorites(id);
+    } else {
+      addToFavorites({
+        id,
+        title,
+        poster_path: imgUrl,
+        release_date: releaseDate,
+      });
+    }
+  };
+
+  const cardClasses = favorite
+    ? "w-full max-w-sm mx-auto shadow-md bg-white rounded-lg transform transition-transform hover:translate-y-[-5px]"
+    : "w-full max-w-sm mx-auto shadow-md bg-gray-200 rounded-lg transform transition-transform hover:translate-y-[-5px]";
 
   return (
-    <Card className="w-full max-w-sm mx-auto shadow-md bg-white rounded-lg transform transition-transform hover:translate-y-[-5px]">
+    <Card
+      className={cardClasses}
+      onMouseEnter={(e) => {
+        const button = e.currentTarget.querySelector(
+          ".heart-button",
+        ) as HTMLElement;
+        if (button) button.style.opacity = "1";
+      }}
+      onMouseLeave={(e) => {
+        const button = e.currentTarget.querySelector(
+          ".heart-button",
+        ) as HTMLElement;
+        if (button) button.style.opacity = "0";
+      }}
+    >
       <div className="relative">
         <Card.Img
           variant="top"
-          src={imgUrl || defaultImgUrl}
+          src={`https://image.tmdb.org/t/p/w500/${imgUrl || ""}`}
           alt={title}
           className="w-full h-64 object-cover"
-          onError={(e) => {
-            e.currentTarget.src = defaultImgUrl;
-          }}
         />
 
         <Button
           variant={favorite ? "danger" : "secondary"}
           onClick={handleClick}
-          className="absolute top-4 right-4 p-2 bg-opacity-50 text-white rounded-full hover:bg-opacity-80 transition duration-200"
+          className="heart-button"
+          style={{ position: "absolute", top: "10px", right: "10px" }}
         >
           ♥︎
         </Button>
       </div>
 
       <Card.Body className="p-4 text-center">
-        <h3 className="text-lg font-bold mb-2">{title}</h3>
-        <p className="text-sm text-gray-500">{releaseDate}</p>
+        <h3 className="text-lg font-bold mb-2 truncate">{title}</h3>
+        <p className="text-sm text-gray-500 truncate">{releaseDate}</p>
       </Card.Body>
     </Card>
   );

@@ -3,10 +3,11 @@ import { Container } from "react-bootstrap";
 import { Home } from "./pages/Home";
 import { Favorites } from "./pages/Favorites";
 import { Navbar } from "./components/Navbar";
+import { MovieProvider } from "./context/MovieContext";
 
 function App() {
   return (
-    <>
+    <MovieProvider>
       <Navbar />
       <Container>
         <Routes>
@@ -14,7 +15,7 @@ function App() {
           <Route path="/favorites" element={<Favorites />} />
         </Routes>
       </Container>
-    </>
+    </MovieProvider>
   );
 }
 
